@@ -35,9 +35,17 @@ const moviesPagination = createSlice({
       state.totalPages = action.payload;
     },
     updateMoviesType: (state, action) => {
-      const { type, movies } = action.payload;
-      if (state.moviesType[type] && Array.isArray(movies)) {
-        state.moviesType[type].push(...movies);
+      if (Array.isArray(action.payload)) {
+        action.payload.forEach(({ type, movies }) => {
+          if (state.moviesType[type] && Array.isArray(movies)) {
+            state.moviesType[type].push(...movies);
+          }
+        });
+      } else {
+        const { type, movies } = action.payload;
+        if (state.moviesType[type] && Array.isArray(movies)) {
+          state.moviesType[type].push(...movies);
+        }
       }
     },
     setPlaying: (state, action) => {

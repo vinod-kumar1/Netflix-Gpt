@@ -32,9 +32,9 @@ export default function MoviesPage() {
 
   const types = ["now_playing", "top_rated", "upcoming", "popular"];
 
-  useEffect(() => {
-    forceRender((prev) => !prev);
-  }, [muted]);
+  // useEffect(() => {
+  //   forceRender((prev) => !prev);
+  // }, [muted]);
 
   useEffect(() => {
     if (playing.id == undefined) {
@@ -44,17 +44,18 @@ export default function MoviesPage() {
       fetchMovieKey(moviesType["now_playing"][random]?.id)
         .then((res) => res.json())
         .then((json) => {
-          console.log("movies", moviesType["now_playing"][random]);
-          dispatch(
-            setPlaying({
-              ...json.results[0],
-              ...moviesType["now_playing"][random],
-            })
-          );
-          window.scroll({
-            top: 0,
-            behavior: "smooth",
-          });
+          if (json.results && json.results.length) {
+            dispatch(
+              setPlaying({
+                ...json.results[0],
+                ...moviesType["now_playing"][random],
+              })
+            );
+            window.scroll({
+              top: 0,
+              behavior: "smooth",
+            });
+          }
         })
         .catch(console.log);
     }
@@ -72,16 +73,28 @@ export default function MoviesPage() {
   }, [page]);
 
   useEffect(() => {
-    types.forEach((type) => {
-      const url = `https://api.themoviedb.org/3/movie/${type}?language=en-US&page=${page[type]}`;
-      fetch(url, options)
-        .then((res) => res.json())
-        .then((json) => {
-          if (!json.results || !json.results.length) return;
-          dispatch(updateMoviesType({ type, movies: json.results }));
-        })
-        .catch(console.error);
-    });
+    async function run() {
+      let temp = [];
+      types.forEach(async (type) => {
+        const url = `https://api.themoviedb.org/3/movie/${type}?language=en-US&page=${page[type]}`;
+        // fetch(url, options)
+        //   .then((res) => res.json())
+        //   .then((json) => {
+        //     if (!json.results || !json.results.length) return;
+        //     dispatch(updateMoviesType({ type, movies: json.results }));
+        //   })
+        //   .catch(console.error);
+        let res = await fetch(url, options);
+        let json = await res.json();
+        if (json.results || json.results?.length)
+          temp.push({ type: type, movies: json.results });
+        if (type == "popular") {
+          let data = await Promise.all(temp);
+          dispatch(updateMoviesType(data));
+        }
+      });
+    }
+    run();
   }, []);
 
   return (
